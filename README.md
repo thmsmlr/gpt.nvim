@@ -5,7 +5,7 @@ Twitter's favorite LLM in your VIM.
 Installation is easy. 
 With your favorite package manager,
 
-```
+```lua
 {
   "thmsmlr/gpt.nvim",
   config = function()
