@@ -38,7 +38,7 @@ ChatGPT will respond 2 lines below the selection.
 
 
 
-https://user-images.githubusercontent.com/167206/223228839-726c1c2d-03d0-4ac5-b34b-9485b6d9f75d.mp4
+https://user-images.githubusercontent.com/167206/223229448-821fd6f5-745b-4c44-a9e0-4afd6238e018.mp4
 
 
 
