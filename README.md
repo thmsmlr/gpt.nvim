@@ -32,20 +32,18 @@ You can get an API key via the [OpenAI user settings page](https://platform.open
 
 There are three ways to use the plugin:
 
+1. In Visual Mode, select text and use it as the prompt with `<C-g>p`.
+ChatGPT will respond 2 lines below the selection.
+
+![](assets/explain-raw.mp4)
+
+1. In Insert Mode, `<C-g>p` will ask you for a prompt.
+ChatGPT will insert it's response into the buffer at the cursor's location.
+
+![](assets/write-haiku-raw.mp4)
+
 1. In Visual Mode, select text and rewrite it using `<C-g>r`.
 It'll ask you for the prompt to customize how GPT rewrites the selection.
 
-[Video1]
-
-2. In Visual Mode, select text and use it as the prompt with `<C-g>p`.
-ChatGPT will respond 2 lines below the selection.
-
-[Video2]
-
-3. In Normal Mode, `<C-g>p` will ask you for a prompt.
-ChatGPT will insert it's response into the buffer at the cursor's location.
-
-[Video3]
-
-## 
+![](assets/edit-haiku-raw.mp4)
 
