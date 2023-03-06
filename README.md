@@ -35,7 +35,6 @@ There are three ways to use the plugin:
 In Visual Mode, select text and use it as the prompt with `<C-g>p`.
 ChatGPT will respond 2 lines below the selection.
 
-<video src="assets/explain-raw.mp4" width=240 />
 
 
 
