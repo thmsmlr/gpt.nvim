@@ -1,4 +1,5 @@
 <h1 align="center">gpt.nvim</h1>
+<img align="center" src="https://readme-typing-svg.demolab.com?font=Fira+Code&duration=2500&pause=1000&color=969696&center=true&width=435&lines=Twitter's+Favorite+LLM+in+Neovim;Looking+for+an+AI-ffordable+option;AI-caramba;Robo-cop+out" alt="Typing SVG" />
 
 Twitter's favorite LLM in your VIM.
 
