@@ -36,23 +36,23 @@ There are three ways to use the plugin:
 ChatGPT will respond 2 lines below the selection.
 
 
-https://user-images.githubusercontent.com/167206/223222922-bcf141aa-34de-412c-97b8-3171aec795c6.mp4
+
+
+https://user-images.githubusercontent.com/167206/223222944-8415e7c8-7b14-4852-88c1-129437c40b46.mp4
 
 
 
 1. In Insert Mode, `<C-g>p` will ask you for a prompt.
 ChatGPT will insert it's response into the buffer at the cursor's location.
 
+https://user-images.githubusercontent.com/167206/223222922-bcf141aa-34de-412c-97b8-3171aec795c6.mp4
 
-
-https://user-images.githubusercontent.com/167206/223222929-1f8b9802-30f2-422a-904f-71be21aeedac.mp4
 
 
 3. In Visual Mode, select text and rewrite it using `<C-g>r`.
 It'll ask you for the prompt to customize how GPT rewrites the selection.
 
+https://user-images.githubusercontent.com/167206/223222929-1f8b9802-30f2-422a-904f-71be21aeedac.mp4
 
-
-https://user-images.githubusercontent.com/167206/223222944-8415e7c8-7b14-4852-88c1-129437c40b46.mp4
 
 
