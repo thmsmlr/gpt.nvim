@@ -37,22 +37,28 @@ ChatGPT will respond 2 lines below the selection.
 
 
 
+https://user-images.githubusercontent.com/167206/223226836-2108a1c0-9a34-43cd-afa9-7cf2a351612e.mp4
 
-https://user-images.githubusercontent.com/167206/223222944-8415e7c8-7b14-4852-88c1-129437c40b46.mp4
+
+
 
 
 
 1. In Insert Mode, `<C-g>p` will ask you for a prompt.
 ChatGPT will insert it's response into the buffer at the cursor's location.
 
-https://user-images.githubusercontent.com/167206/223222922-bcf141aa-34de-412c-97b8-3171aec795c6.mp4
+
+
+https://user-images.githubusercontent.com/167206/223226876-842103e9-5928-4599-9965-6b163d3fb07b.mp4
 
 
 
 3. In Visual Mode, select text and rewrite it using `<C-g>r`.
 It'll ask you for the prompt to customize how GPT rewrites the selection.
 
-https://user-images.githubusercontent.com/167206/223222929-1f8b9802-30f2-422a-904f-71be21aeedac.mp4
+
+
+https://user-images.githubusercontent.com/167206/223226916-4858c39d-36ef-475f-87b7-25aed4a61ea8.mp4
 
 
 
