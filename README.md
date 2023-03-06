@@ -37,14 +37,14 @@ ChatGPT will respond 2 lines below the selection.
 
 
 
-https://user-images.githubusercontent.com/167206/223226836-2108a1c0-9a34-43cd-afa9-7cf2a351612e.mp4
+
+https://user-images.githubusercontent.com/167206/223228839-726c1c2d-03d0-4ac5-b34b-9485b6d9f75d.mp4
 
 
 
 
 
-
-1. In Insert Mode, `<C-g>p` will ask you for a prompt.
+2. In Insert Mode, `<C-g>p` will ask you for a prompt.
 ChatGPT will insert it's response into the buffer at the cursor's location.
 
 
