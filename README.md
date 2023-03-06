@@ -1,4 +1,4 @@
-# gpt.nvim
+<h1 align="center">gpt.nvim</h1>
 
 Twitter's favorite LLM in your VIM.
 
