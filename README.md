@@ -49,7 +49,9 @@ ChatGPT will insert it's response into the buffer at the cursor's location.
 
 
 
-https://user-images.githubusercontent.com/167206/223226876-842103e9-5928-4599-9965-6b163d3fb07b.mp4
+
+https://user-images.githubusercontent.com/167206/223229643-940f2fa3-57ad-4dfb-a254-0fcc27dda13f.mp4
+
 
 
 
@@ -58,7 +60,6 @@ It'll ask you for the prompt to customize how GPT rewrites the selection.
 
 
 
-https://user-images.githubusercontent.com/167206/223226916-4858c39d-36ef-475f-87b7-25aed4a61ea8.mp4
-
+https://user-images.githubusercontent.com/167206/223229656-1dcb9fad-5864-492f-9aeb-6e6ec6c584d7.mp4
 
 
