@@ -37,6 +37,12 @@ ChatGPT will respond 2 lines below the selection.
 
 <video src="assets/explain-raw.mp4" width=240 />
 
+
+
+https://user-images.githubusercontent.com/167206/223190592-bbcfe5b5-f6be-48c2-aa30-8a1fee005cf6.mp4
+
+
+
 In Insert Mode, `<C-g>p` will ask you for a prompt.
 ChatGPT will insert it's response into the buffer at the cursor's location.
 
