@@ -2,10 +2,10 @@
   <h3 align="center">gpt.nvim</h3>
 </p>
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&duration=2500&pause=1000&color=969696&center=true&width=435&lines=Twitter's+Favorite+LLM+in+Neovim;Looking+for+an+AI-ffordable+option;AI-caramba;Robo-cop+out" alt="Typing SVG" />
+  <img src="assets/typing.png" alt="Typing SVG" />
 </p>
 
-Twitter's favorite LLM in your VIM.
+<hr/>
 
 Installation is easy. 
 With your favorite package manager,
@@ -46,4 +46,6 @@ ChatGPT will respond 2 lines below the selection.
 ChatGPT will insert it's response into the buffer at the cursor's location.
 
 [Video3]
+
+## 
 
