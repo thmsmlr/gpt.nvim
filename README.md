@@ -35,7 +35,9 @@ There are three ways to use the plugin:
 1. In Visual Mode, select text and use it as the prompt with `<C-g>p`.
 ChatGPT will respond 2 lines below the selection.
 
-![](assets/explain-raw.mp4)
+<video width="100%">
+  <source src="assets/explain-raw.mp4" type="video/mp4">
+</video>
 
 1. In Insert Mode, `<C-g>p` will ask you for a prompt.
 ChatGPT will insert it's response into the buffer at the cursor's location.
