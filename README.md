@@ -2,7 +2,7 @@
   <h3 align="center">gpt.nvim</h3>
 </p>
 <p align="center">
-  <img src="assets/typing.png" alt="Typing SVG" />
+  <img src="assets/typing.svg" alt="Typing SVG" />
 </p>
 
 <hr/>
