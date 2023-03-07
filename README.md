@@ -61,4 +61,3 @@ It'll ask you for the prompt to customize how GPT rewrites the selection.
 https://user-images.githubusercontent.com/167206/223226916-4858c39d-36ef-475f-87b7-25aed4a61ea8.mp4
 
 
-

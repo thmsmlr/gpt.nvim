@@ -114,6 +114,36 @@ local function send_keys(keys)
 	)
 end
 
+local function create_response_writer()
+	local bufnum = vim.api.nvim_get_current_buf()
+	local nsnum = vim.api.nvim_create_namespace("gpt")
+	local line_start = vim.fn.line(".")
+	local extmarkid = vim.api.nvim_buf_set_extmark(bufnum, nsnum, line_start, 0, {})
+
+	local response = ""
+	return function(chunk)
+		-- Delete the currently written response
+		local num_lines = #(vim.split(response, "\n", {}))
+		vim.api.nvim_buf_set_lines(
+			bufnum, line_start, line_start + num_lines,
+			false, {}
+		)
+
+		-- Update the line start to wherever the extmark is now
+		line_start = vim.api.nvim_buf_get_extmark_by_id(bufnum, nsnum, extmarkid, {})[1]
+
+		-- Write out the latest
+		response = response .. chunk
+		vim.api.nvim_buf_set_lines(
+			bufnum, line_start, line_start,
+			false, vim.split(response, "\n", {})
+		)
+
+		vim.cmd('undojoin')
+	end
+end
+
+
 --[[
 In visual mode given some selected text, ask the user how they
 would like it to be rewritten. Then rewrite it that way.
@@ -154,14 +184,19 @@ is currently positioned.
 ]]
 --
 M.prompt = function()
-	local mode = vim.api.nvim_get_mode().mode
-	M.stream(vim.fn.input('Prompt: '), {
+	local input = vim.fn.input({
+		prompt = "[Prompt]: ",
+		cancelreturn = "__CANCEL__"
+	})
+
+	if input == "__CANCEL__" then
+		return
+	end
+
+	send_keys("<esc>")
+	M.stream(input, {
 		trim_leading = true,
-		on_chunk = function(chunk)
-			chunk = vim.split(chunk, "\n", {})
-			vim.api.nvim_put(chunk, "c", mode == 'V', true)
-			vim.cmd('undojoin')
-		end
+		on_chunk = create_response_writer()
 	})
 end
 
@@ -175,24 +210,27 @@ M.visual_prompt = function()
 	local text = get_visual_selection()
 
 	local prompt = ""
-	prompt = prompt .. vim.fn.input("[Prompt]: " .. prompt)
+	local input = vim.fn.input({
+		prompt = "[Prompt]: " .. prompt,
+		cancelreturn = "__CANCEL__"
+	})
+
+	if input == "__CANCEL__" then
+		return
+	end
+
+	prompt = prompt .. input
 	prompt = prompt .. "\n\n ===== \n\n" .. text .. "\n\n ===== \n\n"
 
 	send_keys("<esc>")
 
 	if mode == 'V' then
-		send_keys("o")
+		send_keys("o<CR><esc>")
 	end
-
-	send_keys("<CR><esc>O")
 
 	M.stream(prompt, {
 		trim_leading = true,
-		on_chunk = function(chunk)
-			chunk = vim.split(chunk, "\n", {})
-			vim.api.nvim_put(chunk, "c", mode == 'V', true)
-			vim.cmd('undojoin')
-		end
+		on_chunk = create_response_writer()
 	})
 
 	send_keys("<esc>")
