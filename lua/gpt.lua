@@ -73,7 +73,7 @@ M.stream = function(prompt, opts)
 		log:close()
 	end
 
-	vim.fn.jobstart(command, {
+	vim.g.gpt_jobid = vim.fn.jobstart(command, {
 		stdout_buffered = false,
 		on_stdout = function(_, data, _)
 			for _, line in ipairs(data) do
@@ -234,6 +234,10 @@ M.visual_prompt = function()
 	})
 
 	send_keys("<esc>")
+end
+
+M.cancel = function()
+	vim.fn.jobstop(vim.g.gpt_jobid)
 end
 
 return M
