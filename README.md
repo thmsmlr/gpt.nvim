@@ -19,9 +19,26 @@ With your favorite package manager,
     })
 
     opts = { silent = true, noremap = true }
-    vim.keymap.set('v', '<C-g>r', require('gpt').replace, opts)
-    vim.keymap.set('v', '<C-g>p', require('gpt').visual_prompt, opts)
-    vim.keymap.set('i', '<C-g>p', require('gpt').prompt, opts)
+    vim.keymap.set('v', '<C-g>r', require('gpt').replace, {
+      silent = true,
+      noremap = true,
+      desc = "[G]pt [R]ewrite"
+    })
+    vim.keymap.set('v', '<C-g>p', require('gpt').visual_prompt, {
+      silent = false,
+      noremap = true,
+      desc = "[G]pt [P]rompt"
+    })
+    vim.keymap.set('n', '<C-g>p', require('gpt').prompt, {
+      silent = true,
+      noremap = true,
+      desc = "[G]pt [P]rompt"
+    })
+    vim.keymap.set('i', '<C-g>p', require('gpt').prompt, {
+      silent = true,
+      noremap = true,
+      desc = "[G]pt [P]rompt"
+    })
   end
 }
 ```
