@@ -32,24 +32,34 @@ require('gpt').stream("What is the meaning of life?", {
 ```
 ]]
 --
-M.stream = function(prompt, opts)
+M.stream = function(prompt_or_messages, opts)
 	if vim.g.gpt_api_key == nil then
 		print("Please provide an OpenAI API key require('gpt').setup({})")
 		return
 	end
 
+	local messages = prompt_or_messages
+	if type(prompt_or_messages) == "string" then
+		messages = { { role = "user", content = prompt_or_messages } }
+	end
+
 	local payload = {
 		stream = true,
-		model = "gpt-3.5-turbo",
-		messages = { { role = "user", content = prompt } },
+		-- model = "gpt-3.5-turbo",
+		model = "gpt-4",
+		messages = messages,
 	}
 
-	local identity = function(chunk)
+	local identity1 = function(chunk)
 		return chunk
 	end
 
+	local identity = function()
+	end
+
 	opts = opts or {}
-	local cb = opts.on_chunk or identity
+	local cb = opts.on_chunk or identity1
+	local on_exit = opts.on_exit or identity
 	local trim_leading = opts.trim_leading or true
 	local encoded_payload = vim.fn.json_encode(payload)
 
@@ -75,12 +85,13 @@ M.stream = function(prompt, opts)
 
 	vim.g.gpt_jobid = vim.fn.jobstart(command, {
 		stdout_buffered = false,
+		on_exit = on_exit,
 		on_stdout = function(_, data, _)
 			for _, line in ipairs(data) do
 				if line ~= "" then
 					-- Strip token to get down to the JSON
 					line = line:gsub("^data: ", "")
-					if line == "[DONE]" then
+					if line == "" then
 						break
 					end
 					local json = vim.fn.json_decode(line)
@@ -238,6 +249,89 @@ end
 
 M.cancel = function()
 	vim.fn.jobstop(vim.g.gpt_jobid)
+end
+
+local function parse_chatlog(chatlog)
+	local messages = {}
+	local currentRole = ""
+	local currentContent = ""
+
+	-- use gmatch to find all ">>> User:" and "🤖 GPT:" patterns
+	for line in chatlog:gmatch("[^\r\n]+") do
+		if line:sub(1, 4) == ">>> " then -- start of a user message
+			if currentRole ~= "" then -- append previous message to list
+				table.insert(messages, { role = currentRole, content = currentContent })
+				currentRole = "" -- reset current role
+				currentContent = "" -- reset current content
+			end
+			currentRole = "user"
+			currentContent = line:sub(5):gsub("^%s*", "") -- remove ">>> " and any leading spaces from user message
+		elseif line:sub(1, 8) == "🤖 GPT:" then -- start of bot message
+			if currentRole ~= "" then -- append previous message to list
+				table.insert(messages, { role = currentRole, content = currentContent })
+				currentRole = "" -- reset current role
+				currentContent = "" -- reset current content
+			end
+			currentRole = "assistant"
+			currentContent = line:sub(9):gsub("^%s*", "") -- remove "🤖 GPT: " and any leading spaces from bot message
+		else -- continuation of previous message
+			currentContent = currentContent .. "\n" .. line
+		end
+	end
+
+	-- append last message to
+	if currentRole ~= "" then
+		table.insert(messages, { role = currentRole, content = currentContent })
+	end
+
+	return messages
+end
+
+M.open_chatwindow = function()
+	local scratchpad_file = "~/temp/scratchpad" -- Set the path to your scratchpad file
+	scratchpad_file = vim.fn.expand(scratchpad_file)
+
+	-- Check if the scratchpad file is already open in a buffer
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_get_name(bufnr) == scratchpad_file then
+			-- The file is open, find the window and focus it
+			for _, winid in ipairs(vim.api.nvim_list_wins()) do
+				if vim.api.nvim_win_get_buf(winid) == bufnr then
+					vim.api.nvim_set_current_win(winid)
+					return
+				end
+			end
+		end
+	end
+
+	-- The file is not open, create a new scratchpad buffer backed by the file
+	vim.cmd("vs " .. scratchpad_file)
+	vim.cmd [[ :set ft=markdown ]]
+	vim.cmd [[ :autocmd TextChanged,TextChangedI <buffer> silent write ]]
+
+	vim.keymap.set('n', '<C-g><CR>', function()
+		-- get all the text in the buffer
+		local text = table.concat(
+			vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"
+		)
+
+		-- move cursor to a newline at the end of the file
+		vim.api.nvim_buf_set_lines(0, -1, -1, false, { '', '🤖 GPT: ', '' })
+		vim.api.nvim_win_set_cursor(0, { vim.fn.line("$"), 0 })
+
+		M.stream(parse_chatlog(text), {
+			trim_leading = true,
+			on_chunk = create_response_writer(),
+			on_exit = function()
+				vim.api.nvim_buf_set_lines(0, -1, -1, false, { '', '>>> ' })
+			end
+		})
+	end, {
+		buffer = true,
+		silent = false,
+		noremap = true,
+		desc = "[G]pt Respond"
+	})
 end
 
 return M
