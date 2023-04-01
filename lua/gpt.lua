@@ -125,10 +125,10 @@ local function send_keys(keys)
 	)
 end
 
-local function create_response_writer()
+local function create_response_writer(opts)
+	local line_start = opts.line_no or vim.fn.line(".")
 	local bufnum = vim.api.nvim_get_current_buf()
 	local nsnum = vim.api.nvim_create_namespace("gpt")
-	local line_start = vim.fn.line(".")
 	local extmarkid = vim.api.nvim_buf_set_extmark(bufnum, nsnum, line_start, 0, {})
 
 	local response = ""
@@ -291,6 +291,27 @@ M.open_chatwindow = function()
 	local scratchpad_file = "~/temp/scratchpad" -- Set the path to your scratchpad file
 	scratchpad_file = vim.fn.expand(scratchpad_file)
 
+	-- Find the last non-empty line in the buffer
+	local function last_nonempty_line(buf)
+		local line_count = vim.api.nvim_buf_line_count(buf)
+		for i = line_count, 1, -1 do
+			local line_text = vim.api.nvim_buf_get_lines(buf, i - 1, i, false)[1]
+			if #line_text > 0 then
+				return i
+			end
+		end
+		return 1
+	end
+
+	-- Trim all the empty whitespace at the end of the file
+	local function trim_trailing_whitespace(buf)
+		local line_count = vim.api.nvim_buf_line_count(buf)
+		local last_line = last_nonempty_line(buf)
+		if last_line < line_count then
+			vim.api.nvim_buf_set_lines(buf, last_line, line_count, false, {})
+		end
+	end
+
 	-- Check if the scratchpad file is already open in a buffer
 	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
 		if vim.api.nvim_buf_get_name(bufnr) == scratchpad_file then
@@ -308,22 +329,25 @@ M.open_chatwindow = function()
 	vim.cmd("vs " .. scratchpad_file)
 	vim.cmd [[ :set ft=markdown ]]
 	vim.cmd [[ :autocmd TextChanged,TextChangedI <buffer> silent write ]]
+	vim.cmd [[ :set noswapfile ]]
 
 	vim.keymap.set('n', '<C-g><CR>', function()
 		-- get all the text in the buffer
 		local text = table.concat(
 			vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"
 		)
-
 		-- move cursor to a newline at the end of the file
-		vim.api.nvim_buf_set_lines(0, -1, -1, false, { '', '🤖 GPT: ', '' })
-		vim.api.nvim_win_set_cursor(0, { vim.fn.line("$"), 0 })
-
+		local last_line = last_nonempty_line(0)
+		vim.api.nvim_buf_set_lines(0, last_line, last_line, false, { '', '🤖 GPT: ', '', '', '' })
+		vim.api.nvim_win_set_cursor(0, { last_line + 4, 0 })
 		M.stream(parse_chatlog(text), {
 			trim_leading = true,
-			on_chunk = create_response_writer(),
+			on_chunk = create_response_writer({ line_no = last_line + 3 }),
 			on_exit = function()
-				vim.api.nvim_buf_set_lines(0, -1, -1, false, { '', '>>> ' })
+				trim_trailing_whitespace(0)
+				local last_line = last_nonempty_line(0)
+				vim.api.nvim_buf_set_lines(0, last_line, last_line, false, { '', '>>> ' })
+				vim.api.nvim_win_set_cursor(0, { last_line + 2, 5 })
 			end
 		})
 	end, {
