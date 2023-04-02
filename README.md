@@ -50,6 +50,12 @@ With your favorite package manager,
 
 You can get an API key via the [OpenAI user settings page](https://platform.openai.com/account/api-keys)
 
+It also requires that you have `yq` installed,
+
+```
+$ pacman -S yq
+```
+
 ## Usage
 
 There are three ways to use the plugin:

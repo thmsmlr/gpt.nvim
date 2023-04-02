@@ -251,10 +251,49 @@ M.cancel = function()
 	vim.fn.jobstop(vim.g.gpt_jobid)
 end
 
+local function parse_frontmatter(chatlog)
+	-- Trim leading whitespace and newlines
+	chatlog = chatlog:gsub("^%s+", "")
+
+	-- Check if first line is just "---"
+	if chatlog:sub(1, 3) ~= "---" then
+		return {}, chatlog
+	end
+
+	-- Find the end of the frontmatter
+	local frontmatter_end = chatlog:find("---", 4, true)
+	if frontmatter_end == nil then
+		return {}, chatlog
+	end
+
+	vim.pretty_print(chatlog)
+
+	-- Parse the frontmatter
+	local yaml_string = chatlog:sub(4, frontmatter_end - 1)
+	local rest = chatlog:sub(frontmatter_end + 4)
+
+	-- use `yq` to convert yaml to json
+	local json_string = vim.fn.system("yq -j", yaml_string)
+	local frontmatter = vim.fn.json_decode(json_string)
+
+	if frontmatter == nil then
+		return {}, chatlog
+	end
+
+	return frontmatter, rest
+end
+
 local function parse_chatlog(chatlog)
+	local metadata = {}
+	metadata, chatlog = parse_frontmatter(chatlog)
+
 	local messages = {}
 	local currentRole = ""
 	local currentContent = ""
+
+	if metadata["system_prompt"] ~= nil then
+		table.insert(messages, { role = "system", content = metadata["system_prompt"] })
+	end
 
 	-- use gmatch to find all ">>> User:" and "🤖 GPT:" patterns
 	for line in chatlog:gmatch("[^\r\n]+") do
@@ -266,7 +305,7 @@ local function parse_chatlog(chatlog)
 			end
 			currentRole = "user"
 			currentContent = line:sub(5):gsub("^%s*", "") -- remove ">>> " and any leading spaces from user message
-		elseif line:sub(1, 8) == "🤖 GPT:" then -- start of bot message
+		elseif line:find("^🤖 GPT: ") then -- start of a bot message
 			if currentRole ~= "" then -- append previous message to list
 				table.insert(messages, { role = currentRole, content = currentContent })
 				currentRole = "" -- reset current role
@@ -287,9 +326,35 @@ local function parse_chatlog(chatlog)
 	return messages
 end
 
-M.open_chatwindow = function()
-	local scratchpad_file = "~/temp/scratchpad" -- Set the path to your scratchpad file
+M.new_chat = function()
+	local date = os.date("%Y-%m-%d-%H-%M-%S")
+	local new_file = "~/chat-logs/" .. date .. ".chat.md"
+	new_file = vim.fn.expand(new_file)
+
+	local scratchpad_file = "~/chat-logs/latest"
 	scratchpad_file = vim.fn.expand(scratchpad_file)
+	vim.fn.system("touch " .. new_file)
+	vim.fn.system("echo '>>>' > " .. new_file)
+	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
+
+	vim.cmd("e " .. scratchpad_file)
+	vim.cmd [[ :set ft=markdown ]]
+	vim.cmd [[ :autocmd TextChanged,TextChangedI <buffer> silent write ]]
+	vim.cmd [[ :set noswapfile ]]
+end
+
+M.open_chatwindow = function()
+	local scratchpad_file = "~/chat-logs/latest"
+	scratchpad_file = vim.fn.expand(scratchpad_file)
+
+	-- If the file doesn't exist, create a new one with the current date and symlink it
+	if not vim.loop.fs_access(scratchpad_file, "R") then
+		local date = os.date("%Y-%m-%d-%H-%M-%S")
+		local new_file = "~/chat-logs/" .. date .. ".chat.md"
+		new_file = vim.fn.expand(new_file)
+		vim.fn.system("touch " .. new_file)
+		vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
+	end
 
 	-- Find the last non-empty line in the buffer
 	local function last_nonempty_line(buf)
@@ -326,7 +391,7 @@ M.open_chatwindow = function()
 	end
 
 	-- The file is not open, create a new scratchpad buffer backed by the file
-	vim.cmd("vs " .. scratchpad_file)
+	vim.cmd("e " .. scratchpad_file)
 	vim.cmd [[ :set ft=markdown ]]
 	vim.cmd [[ :autocmd TextChanged,TextChangedI <buffer> silent write ]]
 	vim.cmd [[ :set noswapfile ]]
@@ -356,6 +421,27 @@ M.open_chatwindow = function()
 		noremap = true,
 		desc = "[G]pt Respond"
 	})
+
+	vim.keymap.set('n', '<C-g>n', M.new_chat, {
+		buffer = true,
+		silent = false,
+		noremap = true,
+		desc = "[G]pt [N]ew Chat"
+	})
+
+	vim.keymap.set('n', '<C-p>', function()
+		require('telescope.builtin').find_files({
+			prompt_title = "Chat Logs",
+			cwd = "~/chat-logs",
+			sorting_strategy = "descending",
+		})
+	end, {
+		buffer = true,
+		silent = false,
+		noremap = true,
+		desc = "Find Chat Log"
+	})
 end
+
 
 return M
