@@ -327,36 +327,7 @@ local function parse_chatlog(chatlog)
 	return messages, metadata
 end
 
-M.new_chat = function()
-	local date = os.date("%Y-%m-%d-%H-%M-%S")
-	local new_file = "~/chat-logs/" .. date .. ".chat.md"
-	new_file = vim.fn.expand(new_file)
-
-	local scratchpad_file = "~/chat-logs/latest"
-	scratchpad_file = vim.fn.expand(scratchpad_file)
-	vim.fn.system("touch " .. new_file)
-	vim.fn.system("echo -e '---\ntitle: Untitled\n---\n\n>>>' > " .. new_file)
-	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
-
-	vim.cmd("e " .. scratchpad_file)
-	vim.cmd [[ :set ft=markdown ]]
-	vim.cmd [[ :autocmd TextChanged,TextChangedI <buffer> silent write ]]
-	vim.cmd [[ :set noswapfile ]]
-end
-
-M.open_chatwindow = function()
-	local scratchpad_file = "~/chat-logs/latest"
-	scratchpad_file = vim.fn.expand(scratchpad_file)
-
-	-- If the file doesn't exist, create a new one with the current date and symlink it
-	if not vim.loop.fs_access(scratchpad_file, "R") then
-		local date = os.date("%Y-%m-%d-%H-%M-%S")
-		local new_file = "~/chat-logs/" .. date .. ".chat.md"
-		new_file = vim.fn.expand(new_file)
-		vim.fn.system("touch " .. new_file)
-		vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
-	end
-
+local function setup_chatwindow(scratchpad_file)
 	-- Find the last non-empty line in the buffer
 	local function last_nonempty_line(buf)
 		local line_count = vim.api.nvim_buf_line_count(buf)
@@ -432,11 +403,12 @@ M.open_chatwindow = function()
 		desc = "[G]pt [N]ew Chat"
 	})
 
-
 	--
 	-- Chat Picker code
 	--
 	local telescope = require("telescope.builtin")
+	local actions = require("telescope.actions")
+	local action_state = require("telescope.actions.state")
 	local finders = require("telescope.finders")
 	local sorters = require("telescope.sorters")
 
@@ -459,11 +431,17 @@ M.open_chatwindow = function()
 	local function chat_picker(opts)
 		local chat_logs, titles = fetch_md_files_with_titles()
 
-		vim.pretty_print(titles)
-
 		telescope.find_files({
 			prompt_title = "Select Chat Log",
 			cwd = "~/chat-logs",
+			attach_mappings = function(prompt_bufnr, map)
+				actions.select_default:replace(function()
+					actions.close(prompt_bufnr)
+					local selection = action_state.get_selected_entry()
+					setup_chatwindow(selection.value)
+				end)
+				return true
+			end,
 			finder = finders.new_table({
 				results = chat_logs,
 				entry_maker = function(filename)
@@ -502,6 +480,39 @@ M.open_chatwindow = function()
 		noremap = true,
 		desc = "Find Chat Log"
 	})
+end
+
+M.new_chat = function()
+	local date = os.date("%Y-%m-%d-%H-%M-%S")
+	local new_file = "~/chat-logs/" .. date .. ".chat.md"
+	new_file = vim.fn.expand(new_file)
+
+	local scratchpad_file = "~/chat-logs/latest"
+	scratchpad_file = vim.fn.expand(scratchpad_file)
+	vim.fn.system("touch " .. new_file)
+	vim.fn.system("echo -e '---\ntitle: Untitled\nmodel: gpt-4\n---\n\n>>>' > " .. new_file)
+	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
+
+	setup_chatwindow(new_file)
+end
+
+M.open_chatwindow = function()
+	local scratchpad_file = "~/chat-logs/latest"
+	scratchpad_file = vim.fn.expand(scratchpad_file)
+
+	-- If the file doesn't exist, create a new one with the current date and symlink it
+	if not vim.loop.fs_access(scratchpad_file, "R") then
+		local date = os.date("%Y-%m-%d-%H-%M-%S")
+		local new_file = "~/chat-logs/" .. date .. ".chat.md"
+		new_file = vim.fn.expand(new_file)
+		vim.fn.system("touch " .. new_file)
+		vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
+	end
+
+	-- Resolve symlink
+	scratchpad_file = vim.fn.system("readlink " .. scratchpad_file)
+
+	setup_chatwindow(scratchpad_file)
 end
 
 
