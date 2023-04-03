@@ -43,10 +43,13 @@ M.stream = function(prompt_or_messages, opts)
 		messages = { { role = "user", content = prompt_or_messages } }
 	end
 
+	local model = opts.model or "gpt-4"
+
 	local payload = {
 		stream = true,
 		-- model = "gpt-3.5-turbo",
-		model = "gpt-4",
+		-- model = "gpt-4",
+		model = model,
 		messages = messages,
 	}
 
@@ -266,8 +269,6 @@ local function parse_frontmatter(chatlog)
 		return {}, chatlog
 	end
 
-	vim.pretty_print(chatlog)
-
 	-- Parse the frontmatter
 	local yaml_string = chatlog:sub(4, frontmatter_end - 1)
 	local rest = chatlog:sub(frontmatter_end + 4)
@@ -291,8 +292,8 @@ local function parse_chatlog(chatlog)
 	local currentRole = ""
 	local currentContent = ""
 
-	if metadata["system_prompt"] ~= nil then
-		table.insert(messages, { role = "system", content = metadata["system_prompt"] })
+	if metadata["prompt"] ~= nil then
+		table.insert(messages, { role = "system", content = metadata["prompt"] })
 	end
 
 	-- use gmatch to find all ">>> User:" and "🤖 GPT:" patterns
@@ -323,7 +324,7 @@ local function parse_chatlog(chatlog)
 		table.insert(messages, { role = currentRole, content = currentContent })
 	end
 
-	return messages
+	return messages, metadata
 end
 
 M.new_chat = function()
@@ -334,7 +335,7 @@ M.new_chat = function()
 	local scratchpad_file = "~/chat-logs/latest"
 	scratchpad_file = vim.fn.expand(scratchpad_file)
 	vim.fn.system("touch " .. new_file)
-	vim.fn.system("echo '>>>' > " .. new_file)
+	vim.fn.system("echo -e '---\ntitle: Untitled\n---\n\n>>>' > " .. new_file)
 	vim.fn.system("ln -sf " .. new_file .. " " .. scratchpad_file)
 
 	vim.cmd("e " .. scratchpad_file)
@@ -405,7 +406,9 @@ M.open_chatwindow = function()
 		local last_line = last_nonempty_line(0)
 		vim.api.nvim_buf_set_lines(0, last_line, last_line, false, { '', '🤖 GPT: ', '', '', '' })
 		vim.api.nvim_win_set_cursor(0, { last_line + 4, 0 })
-		M.stream(parse_chatlog(text), {
+		local messages, metadata = parse_chatlog(text)
+		M.stream(messages, {
+			model = metadata["model"] or "gpt-4",
 			trim_leading = true,
 			on_chunk = create_response_writer({ line_no = last_line + 3 }),
 			on_exit = function()
@@ -429,12 +432,70 @@ M.open_chatwindow = function()
 		desc = "[G]pt [N]ew Chat"
 	})
 
-	vim.keymap.set('n', '<C-p>', function()
-		require('telescope.builtin').find_files({
-			prompt_title = "Chat Logs",
+
+	--
+	-- Chat Picker code
+	--
+	local telescope = require("telescope.builtin")
+	local finders = require("telescope.finders")
+	local sorters = require("telescope.sorters")
+
+	local function fetch_md_files_with_titles()
+		local command = "rg -m 1 -g '*.md' --no-heading --color=never '^title: (.+)$' ~/chat-logs | sort -r"
+		local handle = assert(io.popen(command, 'r'))
+		local output = assert(handle:read('*a'))
+		handle:close()
+		local md_files = {}
+		local titles = {}
+
+		for line in string.gmatch(output, "(.-)\n") do
+			local path, title = string.match(line, "(.-):title: (.+)")
+			table.insert(md_files, path)
+			titles[path] = title
+		end
+		return md_files, titles
+	end
+
+	local function chat_picker(opts)
+		local chat_logs, titles = fetch_md_files_with_titles()
+
+		vim.pretty_print(titles)
+
+		telescope.find_files({
+			prompt_title = "Select Chat Log",
 			cwd = "~/chat-logs",
-			sorting_strategy = "descending",
+			finder = finders.new_table({
+				results = chat_logs,
+				entry_maker = function(filename)
+					local shortfname = string.match(filename, ".*/(.*)")
+					local date = string.match(shortfname, "%d%d%d%d%-%d%d%-%d%d%-%d%d%-%d%d")
+
+					-- Extract the date from the filename, format it like 2023-03-02 12:15PM
+					local year, month, day, hour, minute = string.match(date,
+						"(%d%d%d%d)%-(%d%d)%-(%d%d)%-(%d%d)%-(%d%d)")
+					local am = "AM"
+					if tonumber(hour) > 12 then am = "PM" end
+					hour = string.format("%02d", tonumber(hour) % 12)
+					local date = string.format("%s-%s-%s %s:%s %s", year, month, day, hour, minute, am)
+
+					local display = date
+					local title = titles[filename]
+					if title then
+						display = "(" .. display .. ") " .. title
+					end
+					return {
+						display = display,
+						ordinal = filename,
+						value = filename,
+					}
+				end,
+			}),
+			sorter = sorters.get_generic_fuzzy_sorter(),
 		})
+	end
+
+	vim.keymap.set('n', '<C-p>', function()
+		chat_picker()
 	end, {
 		buffer = true,
 		silent = false,
