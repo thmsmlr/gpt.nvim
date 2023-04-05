@@ -463,7 +463,7 @@ local function setup_chatwindow(scratchpad_file)
 					end
 					return {
 						display = display,
-						ordinal = filename,
+						ordinal = display,
 						value = filename,
 					}
 				end,
