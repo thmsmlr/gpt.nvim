@@ -129,6 +129,7 @@ local function send_keys(keys)
 end
 
 local function create_response_writer(opts)
+	local opts = opts or {}
 	local line_start = opts.line_no or vim.fn.line(".")
 	local bufnum = vim.api.nvim_get_current_buf()
 	local nsnum = vim.api.nvim_create_namespace("gpt")
